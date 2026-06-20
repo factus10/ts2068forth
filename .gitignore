@@ -1,0 +1,12 @@
+# Build artifacts (rebuildable with `make`)
+build/
+
+# Reference materials — large and third-party/copyrighted, kept locally only
+# (TS2068 manual PDF, Advanced Spectrum FORTH book, reference TAPs, ace.rom, etc.)
+doc/
+
+# Local tooling / editor / OS cruft
+.codegraph/
+.claude/
+.DS_Store
+**/.DS_Store
