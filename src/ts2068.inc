@@ -74,12 +74,22 @@ SYSVAR_FRAMES   EQU 0x5C78  ; FRAMES (frame counter, 3 bytes)
 FORTH_START     EQU 0x8000  ; Cartridge ROM entry (DOCK chunk 4)
 FORTH_MAX_SIZE  EQU 0x4000  ; 16K max for code ($8000-$BFFF, chunks 4-5)
 
-; Dictionary gets the WHOLE of chunks 6-7 (16K contiguous) now that the system
-; block has been relocated down into the free part of chunk-3 RAM ($7000-$7FFF).
-; (Chunk 3's $6000-$6FFF holds the HOME-ROM dispatcher/machine stack/CHANS and is
-; left alone; $7000-$7FFF was verified untouched by the HOME ROM + keyboard IRQ.)
-DICT_RAM_START  EQU 0xC000  ; RAM dictionary (grows up)
-DICT_RAM_END    EQU 0xFFFF  ; 16K dictionary space ($C000-$FFFF)
+; The dictionary is RAM that grows up to $FFFF. Where it STARTS depends on the build:
+;
+;   Cartridge (default): $8000-$BFFF is DOCK ROM, so the dictionary can only use
+;     the RAM of chunks 6-7 -> starts at $C000 (16K).
+;
+;   RAM/TAP build (-DRAM_BUILD): the engine is loaded into RAM, so there's no ROM
+;     shadowing $8000-$BFFF. The user dictionary starts just above the engine image
+;     (engine ends ~$A4xx; $A800 leaves headroom) and runs to $FFFF -> ~22K. This
+;     reclaims the ~6.7K gap the cartridge wastes between the engine and $C000,
+;     plus the 16K of HOME RAM the cartridge ROM normally hides.
+    IFDEF RAM_BUILD
+DICT_RAM_START  EQU 0xA800  ; RAM build: dictionary right above the RAM-loaded engine
+    ELSE
+DICT_RAM_START  EQU 0xC000  ; cartridge: dictionary in chunks 6-7 (ROM at $8000-$BFFF)
+    ENDIF
+DICT_RAM_END    EQU 0xFFFF  ; dictionary top (both builds)
 
 ; System areas relocated to free chunk-3 RAM ($7000-$7BFF, ~2.6K used of 4K)
 BUF_START       EQU 0x7000  ; Block buffers (1K, one block)

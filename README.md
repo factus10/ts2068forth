@@ -1,17 +1,18 @@
 # TS2068 fig-FORTH
 
 A from-scratch [fig-FORTH](https://en.wikipedia.org/wiki/Forth_(programming_language)#FIG-Forth)
-for the **Timex/Sinclair 2068**, delivered as an autostarting **16K LROS DOCK cartridge**.
-Written in Z80 assembly (sjasmplus). Boots straight to a Forth `ok` prompt — no BASIC, no tape load.
+for the **Timex/Sinclair 2068**, written in Z80 assembly (sjasmplus). The release ships as a
+**tape (`.tap`) image** that loads into RAM and gives a **~22K dictionary**; the same source
+also builds an autostarting **16K DOCK cartridge** (`make dck`) for those who want plug-and-go.
 
 ## Status
 
-**Working cartridge (v0.7).** Confirmed booting and running on real-hardware-class emulation (Fuse).
+**Working (v0.8).** Confirmed running on real-hardware-class emulation (Fuse).
 
 - 258 words — the full fig-FORTH kernel plus TS2068 hardware words, floating point
   (via the ROM calculator), a block/screen editor, and tape I/O.
-- ~9.4K of the 16K cartridge used; **16K contiguous RAM dictionary** (`$C000-$FFFF`).
-- Runs entirely from ROM (all mutable state relocated to RAM) — `CREATE`/`VARIABLE`/`CONSTANT`/`USER`/`DOES>` defining words all work.
+- **~22K RAM dictionary** in the tape build (`$A800-$FFFF`); 16K in the cartridge build.
+- ROM-safe (all mutable state in RAM) — `CREATE`/`VARIABLE`/`CONSTANT`/`USER`/`DOES>` defining words all work.
 
 ## Quick start
 
@@ -25,12 +26,26 @@ cd sjasmplus && cmake . && make && sudo cp sjasmplus /usr/local/bin
 Build and run:
 
 ```bash
-make            # -> build/forth.dck (cartridge) + build/forth.tap + build/forth.bin
+make            # -> build/forth.dck (cartridge) + build/forth-ram.tap (RAM/tape)
 make verify     # sanity checks on the built image
 
 # Run the cartridge in Fuse (autostarts to the Forth prompt):
 fuse --machine 2068 build/forth.dck
+
+# ...or load the RAM/tape version (bigger dictionary, see below):
+fuse --machine 2068 --tape build/forth-ram.tap     # then in BASIC: LOAD ""
 ```
+
+### Two flavors
+
+| Build | Load | Dictionary | Notes |
+|---|---|---|---|
+| **Cartridge** (`forth.dck`) | DOCK slot — autostarts | **16K** (`$C000-$FFFF`) | The cartridge ROM at `$8000-$BFFF` shadows that 16K of RAM, so the dictionary can only use chunks 6-7. |
+| **RAM/tape** (`forth-ram.tap`) | `LOAD ""` from tape | **~22K** (`$A800-$FFFF`) | Engine loads into RAM, so the dictionary sits right above it and reclaims the space the cartridge can't use. |
+
+Both are the same Forth (same 258 words); they differ only in where the dictionary
+starts. The cartridge wins on convenience (instant autostart); the tape version wins
+on free memory.
 
 Then try:
 

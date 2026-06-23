@@ -18,18 +18,24 @@ float, tape) that Burton lacks.
 
 ## Current build state
 
-**Builds cleanly as a 16K LROS cartridge. ~9.3K / 16K code bytes. 258 words.
-12K dictionary RAM. ROM-safe (all mutable state in RAM).**
+**Builds cleanly. 258 words. ~9.4K code. ROM-safe (all mutable state in RAM).
+Two build variants from the same source (differ only in DICT_RAM_START):**
+- **Cartridge** (`.dck`): 16K dictionary at $C000 (since $8000-$BFFF is DOCK ROM).
+- **RAM/tape** (`.tap`, `-DRAM_BUILD`): ~22K dictionary at $A800 (engine + dict both in
+  RAM, so the user dict sits right above the engine — reclaims the RAM the cartridge ROM
+  shadows). Banner shows 22272 free vs 16128.
 
 ```
-make          # build build/forth.bin + forth.dck (cartridge) + forth.tap
-make dck      # build just the .dck cartridge
-make verify   # run tools/verify.py sanity checks
+make          # build build/forth.dck (cartridge) + build/forth-ram.tap (RAM, ~22K)
+make dck      # just the .dck cartridge (DICT_RAM_START=$C000)
+make ram      # just the RAM .tap (sjasmplus -DRAM_BUILD, DICT_RAM_START=$A800)
+make verify   # run tools/verify.py sanity checks (on the cartridge build)
 ```
 
-Code is ORG'd at $8000 (DOCK chunks 4-5). `tools/mkdck.py` wraps the 16K image
-as an autostarting LROS `.dck`; `tools/mktap.py` makes a RAM/tape `.tap` at $8000
-for quick tests. ROM-safety verified via a ZEsarUX write-breakpoint over
+Code is ORG'd at $8000 (cartridge: DOCK chunks 4-5; RAM build: loaded into RAM at $8000).
+`tools/mkdck.py` wraps the 16K cartridge image as an autostarting LROS `.dck`;
+`tools/mktap.py` wraps the RAM image as a `.tap` (BASIC autoloader: CLEAR 32767, LOAD ""
+CODE, RANDOMIZE USR 32768). ROM-safety verified via a ZEsarUX write-breakpoint over
 $8000-$BFFF (silent through COLD+banner boot). NOTE: ZEsarUX loads the dock
 chunks but does NOT emulate TS2068 LROS autostart, so the auto-boot must be
 confirmed on real hardware (or by manually mapping HSR=$30 then JP $8000).
